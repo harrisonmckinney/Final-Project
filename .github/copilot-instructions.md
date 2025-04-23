@@ -1,0 +1,15 @@
+# Custom Instructions for Copilot
+- Use the active `.py` file. If none or multiple are active, ask the user to specify.
+- Ask the user for the following before proceeding, do not leave any out:
+  - Example code for the tool.
+  - JSON output the tool will create.
+  - Tool specification from Azure Assistants.
+- Create a function for the tool:
+  - Modify the current .py, do not create a new file.
+  - Get function name from tool specification.
+  - Use the example code to define the function.
+  - Separate parameters from a dictionary based on the tool specification.
+  - Do not include API keys; use environment variables instead.
+- Modify the tool call:
+  - Uncomment and adjust the tool call code as needed.
+  - Ensure the function name matches the tool function.

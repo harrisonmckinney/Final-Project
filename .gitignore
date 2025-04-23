@@ -1,0 +1,9 @@
+.env
+*.txt
+*.json
+venv_gradio_openai_assistant/
+*.csv
+__pycache__/
+!requirements.txt
+venv_test_gradio_assistant_template/
+.venv

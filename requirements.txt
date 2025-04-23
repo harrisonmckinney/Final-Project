@@ -1,0 +1,8 @@
+fastapi
+gradio
+openai
+python-dotenv
+uvicorn
+azure-keyvault-secrets
+azure-identity
+git+https://github.com/randywreed/practical_ai_azure_keyvault.git
