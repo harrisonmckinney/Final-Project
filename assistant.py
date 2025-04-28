@@ -8,6 +8,7 @@ import pprint
 import tempfile
 import json
 import traceback
+import http.client
 # Import from practical_ai_azure_keyvault
 from practical_ai_azure_keyvault import initialize_app, AIConfig
 
@@ -121,6 +122,53 @@ def gradio_interface(message, history, assistant_id, thread_id):
     history.append([message, response])
     return history, new_thread_id, ""
 
+# Function to call the Nutrition Advice API
+def Nutrition_Advice(location):
+    conn = http.client.HTTPSConnection("ai-workout-planner-exercise-fitness-nutrition-guide.p.rapidapi.com")
+    
+    payload = json.dumps({
+        "goal": "Lose weight",
+        "dietary_restrictions": ["Vegetarian"],
+        "current_weight": 80,
+        "target_weight": 70,
+        "daily_activity_level": "Moderate",
+        "lang": "en"
+    })
+
+    headers = {
+        'x-rapidapi-key': os.getenv("RAPIDAPI_KEY"),  # Use environment variable for API key
+        'x-rapidapi-host': "ai-workout-planner-exercise-fitness-nutrition-guide.p.rapidapi.com",
+        'Content-Type': "application/json"
+    }
+
+    conn.request("POST", "/nutritionAdvice?noqueue=1", payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    
+    try:
+        response = json.loads(data.decode("utf-8"))
+        return response["result"]
+    except Exception as e:
+        return {"error": str(e)}
+
+# Update the Gradio interface to include Nutrition Advice
+def gradio_interface_with_nutrition(message, history, assistant_id, thread_id, location):
+    if message.lower() == "nutrition advice":
+        nutrition_data = Nutrition_Advice(location)
+        response = pprint.pformat(nutrition_data)
+    else:
+        response, new_thread_id = chat_with_assistant(message, history, assistant_id, thread_id)
+        thread_id = new_thread_id
+
+    # Debug print statement
+    print("Debug - Returning from gradio_interface_with_nutrition:")
+    print("Response:", response)
+    print("History:")
+    pprint.pprint(history)
+    print("New Thread ID:", thread_id)
+    history.append([message, response])
+    return history, thread_id, ""
+
 # Function to download chat history
 
 def download_history(history):
@@ -212,23 +260,22 @@ def assistant():
     """
 
     with gr.Blocks(css="#chatbot { height:600px; overflow-y:scroll; }", head=head) as app:
-        # ... rest of your code
         gr.Markdown("# Chat with OpenAI Assistant")
-        
         
         chatbot = gr.Chatbot(elem_id="chatbot", placeholder="say 'Hello' to start chatting with the assistant...")
         msg = gr.Textbox()
+        location = gr.Textbox(label="Location (e.g., San Francisco, CA)", placeholder="Enter your location")
         clear = gr.Button("Clear")
         
         download_button = gr.Button("Download Chat History")
         download_output = gr.File(label="Chat History")
-        assistant_id=gr.State(value=assistantID)
+        assistant_id = gr.State(value=assistantID)
         thread_id = gr.State()
 
-        msg.submit(gradio_interface, 
-                    inputs=[msg, chatbot, assistant_id, thread_id], 
+        msg.submit(gradio_interface_with_nutrition, 
+                    inputs=[msg, chatbot, assistant_id, thread_id, location], 
                     outputs=[chatbot, thread_id, msg])
-        clear.click(lambda: (None, None,""), None, [chatbot, thread_id], queue=False)
+        clear.click(lambda: (None, None, ""), None, [chatbot, thread_id], queue=False)
         download_button.click(download_history, inputs=[chatbot], outputs=[download_output])
         
     return app
